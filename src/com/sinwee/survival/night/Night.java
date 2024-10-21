@@ -1,5 +1,7 @@
 package com.sinwee.survival.night;
 
+import static java.awt.SystemColor.text;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,6 +19,7 @@ public class Night extends JFrame {
 	private static final int SKILL_COOLDOWN = 10000; // 10 seconds in milliseconds
 	private static final int SKILL_UI_SIZE = 50;
 	private static final int SKILL_UI_MARGIN = 10;
+	private boolean showTutorial = true;
 
 	private GamePanel gamePanel;
 	private Timer timer;
@@ -38,6 +41,7 @@ public class Night extends JFrame {
 		setSize(WIDTH, HEIGHT);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setResizable(false);
+		setLocationRelativeTo(null);
 
 		player = new Player(WIDTH / 2, HEIGHT / 2, 100, 10);
 		enemies = new ArrayList<>();
@@ -54,7 +58,6 @@ public class Night extends JFrame {
 		setFocusable(true);
 
 		timer = new Timer(16, new GameLoop());
-		timer.start();
 	}
 
 	private class GamePanel extends JPanel {
@@ -64,50 +67,91 @@ public class Night extends JFrame {
 			g.setColor(Color.BLACK);
 			g.fillRect(0, 0, getWidth(), getHeight());
 
-			// 플레이어 그리기
-			g.setColor(Color.BLUE);
-			g.fillOval(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE);
-			g.fillRect(player.x + 5, player.y + PLAYER_SIZE, PLAYER_SIZE - 10, PLAYER_SIZE);
-			g.drawLine(player.x-10, player.y + PLAYER_SIZE + 10, player.x + PLAYER_SIZE+10, player.y + PLAYER_SIZE + 10);
-			g.drawLine(player.x + PLAYER_SIZE / 2, player.y + PLAYER_SIZE * 2, player.x + PLAYER_SIZE / 2+15, player.y + PLAYER_SIZE * 2 + 15);
-			g.drawLine(player.x + PLAYER_SIZE / 2, player.y + PLAYER_SIZE * 2, player.x + PLAYER_SIZE / 2-15, player.y + PLAYER_SIZE * 2 + 15);
-
-			// 적 그리기
-			g.setColor(Color.RED);
-			for (Enemy enemy : enemies) {
-				g.fillArc(enemy.x, enemy.y, ENEMY_SIZE, ENEMY_SIZE, 0, 180);
-				g.fillRect(enemy.x, enemy.y + ENEMY_SIZE / 2, ENEMY_SIZE, ENEMY_SIZE / 2);
-				g.setColor(Color.BLACK);
-				g.fillOval(enemy.x + ENEMY_SIZE / 4, enemy.y + ENEMY_SIZE / 4, ENEMY_SIZE / 6, ENEMY_SIZE / 6);
-				g.fillOval(enemy.x + ENEMY_SIZE * 3 / 4 - ENEMY_SIZE / 6, enemy.y + ENEMY_SIZE / 4, ENEMY_SIZE / 6, ENEMY_SIZE / 6);
+			if (showTutorial) {
+				// 튜토리얼 화면 그리기
 				g.setColor(Color.WHITE);
-				g.drawString(enemy.hp + "", enemy.x, enemy.y - 5);
+//				g.setFont(new Font("맑은 고딕", Font.BOLD, 40));
+				g.setFont(new Font(Font.DIALOG, Font.BOLD, 40));
+				drawCenteredString(g, "밤이 되었습니다", getHeight() / 4 - 20);
+
+				// 점 그리기
+				FontMetrics metrics = g.getFontMetrics();
+				int textWidth = metrics.stringWidth(String.valueOf(text));
+				int startX = (getWidth() - textWidth) / 2 + textWidth - 150;  // 텍스트 끝나는 지점 + 여백
+				int y = getHeight() / 4 - 20;
+
+				int dotSize = 6;
+				int dotGap = 10;
+				for (int i = 0; i < 3; i++) {
+					g.fillOval(startX + (dotGap + dotSize) * i, y - dotSize/2, dotSize, dotSize);
+				}
+
+				drawCenteredString(g, "최선을 다해 5분 동안 살아남으세요!", getHeight() / 4 + 20);
+
+				g.setFont(new Font("Arial", Font.PLAIN, 20));
+				drawCenteredString(g, "[ 조작 방법 ]", getHeight() / 2 - 80);
+				drawCenteredString(g, "이동: W A S D", getHeight() / 2 - 40);
+				drawCenteredString(g, "공격: 마우스 클릭", getHeight() / 2);
+				drawCenteredString(g, "스킬: 1번 키 (데스페라도)", getHeight() / 2 + 40);
+
+				g.setFont(new Font("Arial", Font.BOLD, 24));
+				drawCenteredString(g, "클릭하면 게임이 시작됩니다", getHeight() / 2 + 120);
+			} else {
+				// 플레이어 그리기
+				g.setColor(Color.BLUE);
+				g.fillOval(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE);
+				g.fillRect(player.x + 5, player.y + PLAYER_SIZE, PLAYER_SIZE - 10, PLAYER_SIZE);
+				g.drawLine(player.x - 10, player.y + PLAYER_SIZE + 10, player.x + PLAYER_SIZE + 10,
+					player.y + PLAYER_SIZE + 10);
+				g.drawLine(player.x + PLAYER_SIZE / 2, player.y + PLAYER_SIZE * 2,
+					player.x + PLAYER_SIZE / 2 + 15, player.y + PLAYER_SIZE * 2 + 15);
+				g.drawLine(player.x + PLAYER_SIZE / 2, player.y + PLAYER_SIZE * 2,
+					player.x + PLAYER_SIZE / 2 - 15, player.y + PLAYER_SIZE * 2 + 15);
+
+				// 적 그리기
 				g.setColor(Color.RED);
+				for (Enemy enemy : enemies) {
+					g.fillArc(enemy.x, enemy.y, ENEMY_SIZE, ENEMY_SIZE, 0, 180);
+					g.fillRect(enemy.x, enemy.y + ENEMY_SIZE / 2, ENEMY_SIZE, ENEMY_SIZE / 2);
+					g.setColor(Color.BLACK);
+					g.fillOval(enemy.x + ENEMY_SIZE / 4, enemy.y + ENEMY_SIZE / 4, ENEMY_SIZE / 6,
+						ENEMY_SIZE / 6);
+					g.fillOval(enemy.x + ENEMY_SIZE * 3 / 4 - ENEMY_SIZE / 6, enemy.y + ENEMY_SIZE / 4,
+						ENEMY_SIZE / 6, ENEMY_SIZE / 6);
+					g.setColor(Color.WHITE);
+					g.drawString(enemy.hp + "", enemy.x, enemy.y - 5);
+					g.setColor(Color.RED);
+				}
+
+				// 총알 그리기
+				g.setColor(Color.YELLOW);
+				for (Bullet bullet : bullets) {
+					g.fillOval(bullet.x, bullet.y, BULLET_SIZE, BULLET_SIZE);
+				}
+
+				// 시간과 HP 표시
+				g.setColor(Color.WHITE);
+				g.setFont(new Font("Arial", Font.PLAIN, 14));
+				g.drawString("Time: " + time / 60 + "s", 10, 20);
+				g.drawString("HP: " + player.getHp(), 10, 40);
+				g.drawString("Level: " + player.getLevel(), 10, 60);
+				g.drawString("EXP: " + player.getExp() + "/" + (player.getLevel() * 5), 10, 80);
+				g.drawString("Attack: " + player.getAttack(), 10, 100);
+				g.drawString("Monsters Killed: " + player.getMonstersKilled(), 10, 120);
+
+				// 스킬 UI 그리기
+				drawSkillUI(g);
 			}
-
-			// 총알 그리기
-			g.setColor(Color.YELLOW);
-			for (Bullet bullet : bullets) {
-				g.fillOval(bullet.x, bullet.y, BULLET_SIZE, BULLET_SIZE);
-			}
-
-			// 시간과 HP 표시
-			g.setColor(Color.WHITE);
-			g.setFont(new Font("Arial", Font.PLAIN, 14));
-			g.drawString("Time: " + time / 60 + "s", 10, 20);
-			g.drawString("HP: " + player.getHp(), 10, 40);
-			g.drawString("Level: " + player.getLevel(), 10, 60);
-			g.drawString("EXP: " + player.getExp() + "/" + (player.getLevel() * 5), 10, 80);
-			g.drawString("Attack: " + player.getAttack(), 10, 100);
-			g.drawString("Monsters Killed: " + player.getMonstersKilled(), 10, 120);
-
-
-			// 스킬 UI 그리기
-			drawSkillUI(g);
 
 			// 디버그용 코드
 //			g.setColor(Color.YELLOW);
 //			g.drawString("Debug: Skill UI should be visible", 10, HEIGHT - 80);
+		}
+
+		private void drawCenteredString(Graphics g, String text, int y) {
+			FontMetrics metrics = g.getFontMetrics();
+			int x = (getWidth() - metrics.stringWidth(text)) / 2;
+			g.drawString(text, x, y);
 		}
 
 		private void drawSkillUI(Graphics g) {
@@ -162,10 +206,6 @@ public class Night extends JFrame {
 			// 플레이어 이동 업데이트
 			updatePlayerMovement();
 			circularShot.update();
-
-			if (time % 60 == 0) {
-				player.levelUp();
-			}
 
 			if (random.nextInt(100) < 5) {
 				int x = random.nextInt(WIDTH - ENEMY_SIZE);
@@ -268,6 +308,12 @@ public class Night extends JFrame {
 	private class GameMouseListener extends MouseAdapter {
 		@Override
 		public void mousePressed(MouseEvent e) {
+			if (showTutorial) {
+				showTutorial = false;
+				timer.start();  // 게임 시작
+				return;
+			}
+
 			int mouseX = e.getX();
 			int mouseY = e.getY();
 			bullets.add(new Bullet(player.x + PLAYER_SIZE / 2, player.y + PLAYER_SIZE / 2, mouseX, mouseY));
